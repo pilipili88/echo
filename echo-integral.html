@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0f0a1e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Echo">
+<title>Echo Intégral</title>
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0f0a1e; --bg2:#1a1030; --card:#1e1240; --card2:#271850;
+  --border:#3a2868; --text:#ede8ff; --muted:#7a6a9a;
+  --accent:#c084fc; --accent2:#f0abfc;
+  --gold:#fbbf24; --rose:#fb7185; --teal:#2dd4bf;
+  --r:16px; --nav:60px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+
+/* SPLASH */
+#splash{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .6s}
+#splash.hide{opacity:0;pointer-events:none}
+.sl{font-family:'Playfair Display',serif;font-size:3rem;color:var(--accent)}
+.ss{color:var(--muted);font-size:.8rem;letter-spacing:3px;text-transform:uppercase;margin-top:6px}
+.sd{display:flex;gap:8px;margin-top:36px}
+.sd span{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pp 1.2s infinite}
+.sd span:nth-child(2){animation-delay:.2s}
+.sd span:nth-child(3){animation-delay:.4s}
+@keyframes pp{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
+
+/* SHELL */
+#app{height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* TOPBAR */
+.topbar{background:var(--bg2);padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.tb-title{font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--accent)}
+.tb-sub{font-size:.65rem;color:var(--muted);font-style:italic;margin-top:1px}
+.btn-sync{background:var(--card2);border:1px solid var(--border);color:var(--muted);font-family:'Nunito',sans-serif;font-size:.72rem;padding:6px 12px;border-radius:20px;cursor:pointer;display:flex;align-items:center;gap:5px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.dot.on{background:var(--teal);box-shadow:0 0 5px var(--teal)}
+
+/* CONTENT */
+#content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+
+/* PAGES */
+.page{display:none;padding-bottom:16px}
+.page.active{display:block}
+.pc{max-width:700px;margin:auto;padding:12px}
+
+/* BOTTOM NAV */
+.bnav{height:var(--nav);background:var(--bg2);border-top:1px solid var(--border);display:flex;flex-shrink:0}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:.55rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;gap:2px;transition:.2s;padding:4px 2px}
+.ni .ic{font-size:1.25rem;transition:transform .2s}
+.ni.active{color:var(--accent)}
+.ni.active .ic{transform:scale(1.15)}
+
+/* SAVE BAR */
+.sbar{padding:10px 14px;background:var(--bg2);border-top:1px solid var(--border);flex-shrink:0}
+.sbar.hidden{display:none}
+.btn-save{width:100%;max-width:700px;display:block;margin:auto;background:linear-gradient(135deg,var(--accent),#7c3aed);color:white;border:none;padding:14px;border-radius:14px;font-family:'Nunito',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(192,132,252,.35)}
+.btn-save:active{opacity:.85;transform:scale(.99)}
+
+/* SECTIONS */
+.sec{background:var(--card);border-radius:var(--r);padding:16px;margin-bottom:12px;border:1px solid var(--border);position:relative;overflow:hidden}
+.sec::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--c1,#666),var(--c2,#888))}
+.stitle{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--c1,var(--muted));margin-bottom:12px;display:flex;align-items:center;gap:6px}
+
+/* TAGS */
+.tgrid{display:flex;flex-wrap:wrap;gap:6px}
+.tag{background:var(--bg);border:1.5px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:50px;cursor:pointer;font-size:.73rem;font-family:'Nunito',sans-serif;font-weight:500;transition:all .18s;white-space:nowrap}
+.tag:active{transform:scale(.94)}
+.tag.active{background:linear-gradient(135deg,var(--c1,#666),var(--c2,#888));color:white;border-color:transparent;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+
+/* INPUTS */
+.frow{display:flex;gap:8px;margin-top:10px}
+.field{flex:1;background:var(--bg);border:1.5px solid var(--border);color:var(--text);padding:9px 13px;border-radius:12px;font-family:'Nunito',sans-serif;font-size:.83rem;outline:none;transition:border .2s}
+.field:focus{border-color:var(--accent)}
+.field::placeholder{color:var(--muted)}
+textarea.field{width:100%;resize:none;min-height:72px}
+
+/* SLIDERS */
+.slgrp{margin-top:10px}
+.sllbl{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-bottom:4px}
+.slval{color:var(--accent);font-weight:700}
+input[type=range]{-webkit-appearance:none;width:100%;height:5px;background:var(--border);border-radius:3px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;background:var(--accent);border-radius:50%;cursor:pointer;box-shadow:0 0 6px rgba(192,132,252,.5)}
+
+/* COLORS */
+.c-cycle{--c1:#f472b6;--c2:#fb7185}
+.c-humeur{--c1:#fbbf24;--c2:#f59e0b}
+.c-energie{--c1:#34d399;--c2:#10b981}
+.c-douleur{--c1:#a78bfa;--c2:#8b5cf6}
+.c-sex{--c1:#f472b6;--c2:#ec4899}
+.c-sommeil{--c1:#60a5fa;--c2:#3b82f6}
+.c-beaute{--c1:#2dd4bf;--c2:#14b8a6}
+.c-transit{--c1:#ca8a04;--c2:#a16207}
+.c-intime{--c1:#e879f9;--c2:#d946ef}
+.c-food{--c1:#fb923c;--c2:#f97316}
+.c-social{--c1:#4ade80;--c2:#22c55e}
+.c-romantique{--c1:#f43f5e;--c2:#e11d48}
+.c-lieu{--c1:#38bdf8;--c2:#0ea5e9}
+.c-bienetre{--c1:#a78bfa;--c2:#7c3aed}
+.c-loisirs{--c1:#fdba74;--c2:#fb923c}
+.c-meteo{--c1:#7dd3fc;--c2:#38bdf8}
+.c-travail{--c1:#94a3b8;--c2:#64748b}
+.c-mauvaises{--c1:#f87171;--c2:#dc2626}
+.c-corvees{--c1:#78716c;--c2:#57534e}
+.c-sport{--c1:#86efac;--c2:#4ade80}
+.c-sante{--c1:#fca5a5;--c2:#f87171}
+.c-notes{--c1:#94a3b8;--c2:#64748b}
+
+/* AFFIRMATION */
+.affcard{background:linear-gradient(135deg,#2d1b5e,#1e0f4a);border:1px solid #5b3fa0;border-radius:var(--r);padding:18px;margin-bottom:12px;text-align:center;position:relative;overflow:hidden}
+.affcard::after{content:'✦';position:absolute;top:-8px;right:18px;font-size:3.5rem;color:rgba(192,132,252,.06)}
+.afftext{font-family:'Playfair Display',serif;font-style:italic;font-size:1rem;color:var(--accent2);line-height:1.6}
+.affdate{font-size:.65rem;color:var(--muted);margin-top:6px}
+
+/* CYCLE CAL */
+.cycle-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.cs{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 8px;text-align:center}
+.cs-num{font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--accent)}
+.cs-lbl{font-size:.6rem;color:var(--muted);margin-top:2px}
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cal-m{font-family:'Playfair Display',serif;font-size:1.05rem}
+.cnav{background:var(--card2);border:1px solid var(--border);color:var(--muted);padding:5px 11px;border-radius:8px;cursor:pointer;font-size:.9rem}
+.cgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:12px}
+.cdn{font-size:.58rem;text-align:center;color:var(--muted);padding:3px 0;font-weight:700}
+.cd{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:.72rem;cursor:pointer;transition:.2s;font-weight:500;flex-direction:column;gap:1px}
+.cd.empty{cursor:default}
+.cd.today{border:2px solid var(--accent);color:var(--accent);font-weight:700}
+.cd.period{background:rgba(251,113,133,.8);color:white}
+.cd.ovulation{background:rgba(251,191,36,.85);color:#1a0e2e;font-weight:700}
+.cd.fertile{background:rgba(251,191,36,.22);color:var(--gold)}
+.cd.pred-period{background:rgba(251,113,133,.22);color:var(--rose)}
+.cd:not(.empty):hover{transform:scale(1.1)}
+.legend{display:flex;flex-wrap:wrap;gap:7px}
+.li{display:flex;align-items:center;gap:4px;font-size:.65rem;color:var(--muted)}
+.ld{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+
+/* ROUTINES */
+.ritem{display:flex;align-items:center;gap:10px;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px;cursor:pointer;transition:.2s}
+.ritem:active{transform:scale(.97)}
+.ritem.done{border-color:var(--teal);background:rgba(45,212,191,.07)}
+.rcheck{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.85rem;transition:.2s}
+.ritem.done .rcheck{background:var(--teal);border-color:var(--teal)}
+.ricon{font-size:1.2rem}
+.rinfo{flex:1}
+.rname{font-size:.85rem;font-weight:600}
+.rdesc{font-size:.68rem;color:var(--muted);margin-top:1px}
+.rstreak{font-size:.67rem;color:var(--gold)}
+.rprog{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:13px;margin-bottom:12px}
+.rph{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.rpnum{font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--accent)}
+.rpbar{height:7px;background:var(--border);border-radius:4px}
+.rpfill{height:100%;background:linear-gradient(90deg,var(--teal),var(--accent));border-radius:4px;transition:width .5s}
+.add-r{width:100%;background:none;border:2px dashed var(--border);color:var(--muted);padding:11px;border-radius:12px;font-family:'Nunito',sans-serif;font-size:.83rem;cursor:pointer;transition:.2s;margin-top:4px}
+.add-r:hover{border-color:var(--accent);color:var(--accent)}
+
+/* HISTORY */
+.hfilt{display:flex;gap:8px;margin-bottom:12px}
+.hfilt input[type=month]{flex:1;background:var(--card);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:12px;font-family:'Nunito',sans-serif;font-size:.83rem;outline:none}
+.bsm{padding:8px 12px;background:var(--card);border:1px solid var(--border);color:var(--muted);border-radius:12px;cursor:pointer;font-size:.76rem;font-family:'Nunito',sans-serif;transition:.2s}
+.bsm.gr:hover{color:var(--teal);border-color:var(--teal)}
+.bsm.rd:hover{color:var(--rose);border-color:var(--rose)}
+.ecard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:10px;animation:fu .3s ease}
+@keyframes fu{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.ehead{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:9px}
+.edate{font-family:'Playfair Display',serif;font-size:.9rem;color:var(--accent)}
+.emom{font-size:.62rem;padding:2px 8px;border-radius:20px;background:var(--card2);color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{font-size:.62rem;padding:2px 8px;border-radius:20px;border:1px solid var(--border);color:var(--muted)}
+.chip.c{color:white;border-color:transparent}
+.emeta{font-size:.68rem;color:var(--muted);margin-top:6px}
+.enote{font-size:.76rem;color:var(--text);margin-top:7px;padding-top:7px;border-top:1px solid var(--border);font-style:italic;opacity:.85}
+.edel{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.75rem;padding:2px 7px;border-radius:8px;transition:.2s}
+.edel:hover{color:var(--rose)}
+
+/* STATS */
+.sgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px}
+.sc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:15px;text-align:center}
+.sn{font-family:'Playfair Display',serif;font-size:1.9rem;color:var(--accent)}
+.sl2{font-size:.65rem;color:var(--muted);margin-top:3px}
+.tbar{margin-bottom:10px}
+.tbh{display:flex;justify-content:space-between;font-size:.75rem;margin-bottom:4px}
+.tbc{color:var(--muted)}
+.bbar{height:5px;background:var(--border);border-radius:3px}
+.bfill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:3px;transition:width .6s}
+
+/* MODAL */
+.moverlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .3s}
+.moverlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--bg2);border-radius:20px 20px 0 0;border:1px solid var(--border);padding:22px;width:100%;transform:translateY(100%);transition:transform .3s}
+.moverlay.open .modal{transform:translateY(0)}
+.modal h3{font-family:'Playfair Display',serif;color:var(--accent);margin-bottom:14px}
+.mbtns{display:flex;gap:9px;margin-top:14px}
+.bprimary{flex:1;background:linear-gradient(135deg,var(--accent),#7c3aed);color:white;border:none;padding:12px;border-radius:12px;font-family:'Nunito',sans-serif;font-weight:700;cursor:pointer}
+.bcancel{flex:1;background:var(--card);border:1px solid var(--border);color:var(--muted);padding:12px;border-radius:12px;font-family:'Nunito',sans-serif;cursor:pointer}
+
+/* EMPTY */
+.empty{text-align:center;padding:50px 20px;color:var(--muted)}
+.empty .ei{font-size:2.8rem;margin-bottom:10px}
+.empty p{font-size:.85rem}
+
+/* TOAST */
+.toast{position:fixed;bottom:calc(var(--nav) + 14px);left:50%;transform:translateX(-50%) translateY(10px);background:var(--card2);color:var(--text);border:1px solid var(--border);padding:9px 20px;border-radius:50px;font-size:.8rem;font-weight:500;opacity:0;transition:all .3s;z-index:700;white-space:nowrap;box-shadow:0 4px 18px rgba(0,0,0,.4)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="sl">🌙 Echo</div>
+  <div class="ss">Intégral</div>
+  <div class="sd"><span></span><span></span><span></span></div>
+</div>
+
+<div id="app">
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div>
+    <div class="tb-title">🌙 Echo Intégral</div>
+    <div class="tb-sub" id="tb-aff">Chargement...</div>
+  </div>
+  <button class="btn-sync" onclick="syncSheets()">
+    <span class="dot" id="sdot"></span>Sync Sheets
+  </button>
+</div>
+
+<!-- CONTENT -->
+<div id="content">
+
+<!-- ═══ PAGE AUJOURD'HUI ═══ -->
+<div id="p-today" class="page active"><div class="pc">
+
+  <div class="affcard">
+    <div class="afftext" id="aff-text">…</div>
+    <div class="affdate" id="aff-date"></div>
+  </div>
+
+  <!-- CYCLE -->
+  <div class="sec c-cycle">
+    <div class="stitle">🩸 Cycle menstruel</div>
+    <div class="tgrid" id="g-cycle">
+      <button class="tag" onclick="T(this)">Jour 1 règles</button>
+      <button class="tag" onclick="T(this)">Spotting</button>
+      <button class="tag" onclick="T(this)">Flux léger</button>
+      <button class="tag" onclick="T(this)">Flux moyen</button>
+      <button class="tag" onclick="T(this)">Flux abondant</button>
+      <button class="tag" onclick="T(this)">Fin de règles</button>
+      <button class="tag" onclick="T(this)">Glaire crémeuse</button>
+      <button class="tag" onclick="T(this)">Glaire blanc d'œuf</button>
+      <button class="tag" onclick="T(this)">Sécheresse vaginale</button>
+      <button class="tag" onclick="T(this)">Coupe menstruelle</button>
+      <button class="tag" onclick="T(this)">Tampon</button>
+      <button class="tag" onclick="T(this)">Serviette</button>
+      <button class="tag" onclick="T(this)">Culotte menstruelle</button>
+      <button class="tag" onclick="T(this)">Test ovulation +</button>
+      <button class="tag" onclick="T(this)">Test grossesse +</button>
+      <button class="tag" onclick="T(this)">Test grossesse -</button>
+    </div>
+  </div>
+
+  <!-- HUMEUR -->
+  <div class="sec c-humeur">
+    <div class="stitle">😊 Humeur & Émotions</div>
+    <div class="tgrid" id="g-humeur">
+      <button class="tag" onclick="T(this)">Radieuse</button>
+      <button class="tag" onclick="T(this)">Heureuse</button>
+      <button class="tag" onclick="T(this)">Calme</button>
+      <button class="tag" onclick="T(this)">Reconnaissante</button>
+      <button class="tag" onclick="T(this)">Satisfaite</button>
+      <button class="tag" onclick="T(this)">Détendue</button>
+      <button class="tag" onclick="T(this)">Excitée</button>
+      <button class="tag" onclick="T(this)">Inspirée</button>
+      <button class="tag" onclick="T(this)">Anxieuse</button>
+      <button class="tag" onclick="T(this)">Irritable</button>
+      <button class="tag" onclick="T(this)">Triste</button>
+      <button class="tag" onclick="T(this)">Déprimée</button>
+      <button class="tag" onclick="T(this)">Sensible</button>
+      <button class="tag" onclick="T(this)">Épuisée</button>
+      <button class="tag" onclick="T(this)">Débordée</button>
+      <button class="tag" onclick="T(this)">En colère</button>
+      <button class="tag" onclick="T(this)">Peur</button>
+      <button class="tag" onclick="T(this)">Incertaine</button>
+      <button class="tag" onclick="T(this)">Ennui</button>
+      <button class="tag" onclick="T(this)">Stressée</button>
+      <button class="tag" onclick="T(this)">Désespérée</button>
+      <button class="tag" onclick="T(this)">Culpabilité</button>
+      <button class="tag" onclick="T(this)">Obsession</button>
+      <button class="tag" onclick="T(this)">Saute d'humeur</button>
+      <button class="tag" onclick="T(this)">Énergique</button>
+      <button class="tag" onclick="T(this)">En paix</button>
+    </div>
+    <div class="slgrp">
+      <div class="sllbl"><span>Humeur globale</span><span class="slval" id="v-humeur">5</span>/10</div>
+      <input type="range" min="1" max="10" value="5" id="s-humeur" oninput="document.getElementById('v-humeur').innerText=this.value">
+    </div>
+  </div>
+
+  <!-- ÉNERGIE -->
+  <div class="sec c-energie">
+    <div class="stitle">⚡ Énergie & Vitalité</div>
+    <div class="tgrid" id="g-energie">
+      <button class="tag" onclick="T(this)">Énergie ++</button>
+      <button class="tag" onclick="T(this)">Énergie normale</button>
+      <button class="tag" onclick="T(this)">Fatiguée</button>
+      <button class="tag" onclick="T(this)">Épuisée totale</button>
+      <button class="tag" onclick="T(this)">Léthargie</button>
+      <button class="tag" onclick="T(this)">Boost naturel</button>
+      <button class="tag" onclick="T(this)">Sieste faite</button>
+    </div>
+    <div class="slgrp">
+      <div class="sllbl"><span>Niveau d'énergie</span><span class="slval" id="v-energie">5</span>/10</div>
+      <input type="range" min="1" max="10" value="5" id="s-energie" oninput="document.getElementById('v-energie').innerText=this.value">
+    </div>
+    <div class="slgrp">
+      <div class="sllbl"><span>Stress</span><span class="slval" id="v-stress">0</span>/10</div>
+      <input type="range" min="0" max="10" value="0" id="s-stress" oninput="document.getElementById('v-stress').innerText=this.value">
+    </div>
+  </div>
+
+  <!-- DOULEURS -->
+  <div class="sec c-douleur">
+    <div class="stitle">⚡ Douleurs & Inconforts</div>
+    <div class="tgrid" id="g-douleurs">
+      <button class="tag" onclick="T(this)">Aucune douleur</button>
+      <button class="tag" onclick="T(this)">Crampes utérines</button>
+      <button class="tag" onclick="T(this)">Crampes légères</button>
+      <button class="tag" onclick="T(this)">Bas du dos</button>
+      <button class="tag" onclick="T(this)">Migraine</button>
+      <button class="tag" onclick="T(this)">Mal de tête léger</button>
+      <button class="tag" onclick="T(this)">Seins sensibles</button>
+      <button class="tag" onclick="T(this)">Seins douloureux</button>
+      <button class="tag" onclick="T(this)">Douleur ovaires</button>
+      <button class="tag" onclick="T(this)">Jambes lourdes</button>
+      <button class="tag" onclick="T(this)">Crampe jambe</button>
+      <button class="tag" onclick="T(this)">Jambes gonflées</button>
+      <button class="tag" onclick="T(this)">Nuque/Épaules</button>
+      <button class="tag" onclick="T(this)">Articulations</button>
+      <button class="tag" onclick="T(this)">Mal de ventre</button>
+    </div>
+    <div class="slgrp">
+      <div class="sllbl"><span>Intensité douleur</span><span class="slval" id="v-douleur">0</span>/10</div>
+      <input type="range" min="0" max="10" value="0" id="s-douleur" oninput="document.getElementById('v-douleur').innerText=this.value">
+    </div>
+  </div>
+
+  <!-- SEXUALITÉ -->
+  <div class="sec c-sex">
+    <div class="stitle">💖 Sexualité</div>
+    <div class="tgrid" id="g-sex">
+      <button class="tag" onclick="T(this)">Libido ++</button>
+      <button class="tag" onclick="T(this)">Libido normale</button>
+      <button class="tag" onclick="T(this)">Libido --</button>
+      <button class="tag" onclick="T(this)">Libido absente</button>
+      <button class="tag" onclick="T(this)">Rapport protégé</button>
+      <button class="tag" onclick="T(this)">Rapport non protégé</button>
+      <button class="tag" onclick="T(this)">Masturbation</button>
+      <button class="tag" onclick="T(this)">Orgasme</button>
+      <button class="tag" onclick="T(this)">Douleur rapport</button>
+      <button class="tag" onclick="T(this)">Sécheresse</button>
+      <button class="tag" onclick="T(this)">Désir de tendresse</button>
+      <button class="tag" onclick="T(this)">Câlins</button>
+      <button class="tag" onclick="T(this)">Retrait/Distance</button>
+    </div>
+  </div>
+
+  <!-- SOMMEIL -->
+  <div class="sec c-sommeil">
+    <div class="stitle">😴 Sommeil</div>
+    <div class="tgrid" id="g-sommeil">
+      <button class="tag" onclick="T(this)">Nuit profonde</button>
+      <button class="tag" onclick="T(this)">Bonne nuit</button>
+      <button class="tag" onclick="T(this)">Nuit moyenne</button>
+      <button class="tag" onclick="T(this)">Mauvaise nuit</button>
+      <button class="tag" onclick="T(this)">Insomnie</button>
+      <button class="tag" onclick="T(this)">Réveil nocturne</button>
+      <button class="tag" onclick="T(this)">Cauchemars</button>
+      <button class="tag" onclick="T(this)">Rêves intenses</button>
+      <button class="tag" onclick="T(this)">Dormir 8 heures</button>
+      <button class="tag" onclick="T(this)">Dormir tôt</button>
+      <button class="tag" onclick="T(this)">Plus de 10h</button>
+      <button class="tag" onclick="T(this)">Sieste</button>
+      <button class="tag" onclick="T(this)">Mélatonine</button>
+      <button class="tag" onclick="T(this)">Fatigue au réveil</button>
+      <button class="tag" onclick="T(this)">Sueurs nocturnes</button>
+      <button class="tag" onclick="T(this)">Somnolence jour</button>
+    </div>
+    <div class="frow">
+      <input class="field" type="number" id="f-sommeil" placeholder="Heures de sommeil" min="0" max="24" step="0.5">
+    </div>
+    <div class="slgrp">
+      <div class="sllbl"><span>Qualité du sommeil</span><span class="slval" id="v-sommeil">5</span>/10</div>
+      <input type="range" min="1" max="10" value="5" id="s-sommeil" oninput="document.getElementById('v-sommeil').innerText=this.value">
+    </div>
+  </div>
+
+  <!-- CORPS & BEAUTÉ -->
+  <div class="sec c-beaute">
+    <div class="stitle">✨ Corps & Beauté</div>
+    <div class="tgrid" id="g-corps">
+      <button class="tag" onclick="T(this)">Peau claire</button>
+      <button class="tag" onclick="T(this)">Acné/Boutons</button>
+      <button class="tag" onclick="T(this)">Peau grasse</button>
+      <button class="tag" onclick="T(this)">Peau sèche</button>
+      <button class="tag" onclick="T(this)">Peau sensible</button>
+      <button class="tag" onclick="T(this)">Rougeurs</button>
+      <button class="tag" onclick="T(this)">Cheveux brillants</button>
+      <button class="tag" onclick="T(this)">Cheveux gras</button>
+      <button class="tag" onclick="T(this)">Chute cheveux</button>
+      <button class="tag" onclick="T(this)">Cernes</button>
+      <button class="tag" onclick="T(this)">Ongles forts</button>
+      <button class="tag" onclick="T(this)">Ongles cassants</button>
+      <button class="tag" onclick="T(this)">Visage gonflé</button>
+      <button class="tag" onclick="T(this)">Rétention eau</button>
+      <button class="tag" onclick="T(this)">Soins/Masque</button>
+      <button class="tag" onclick="T(this)">Épilation/Rasage</button>
+      <button class="tag" onclick="T(this)">Coiffeur</button>
+      <button class="tag" onclick="T(this)">Spa/Massage</button>
+      <button class="tag" onclick="T(this)">Manucure/Pédicure</button>
+      <button class="tag" onclick="T(this)">Écoulement mammaire</button>
+    </div>
+    <div class="frow">
+      <input class="field" type="number" id="f-poids" placeholder="Poids (kg)" step="0.1">
+    </div>
+  </div>
+
+  <!-- DIGESTION -->
+  <div class="sec c-transit">
+    <div class="stitle">🌿 Digestion & Transit</div>
+    <div class="tgrid" id="g-transit">
+      <button class="tag" onclick="T(this)">Transit parfait</button>
+      <button class="tag" onclick="T(this)">Bonne digestion</button>
+      <button class="tag" onclick="T(this)">Ballonnée</button>
+      <button class="tag" onclick="T(this)">Constipation</button>
+      <button class="tag" onclick="T(this)">Selles molles</button>
+      <button class="tag" onclick="T(this)">Diarrhée</button>
+      <button class="tag" onclick="T(this)">Gaz</button>
+      <button class="tag" onclick="T(this)">Reflux/Acidité</button>
+      <button class="tag" onclick="T(this)">Lourdeur</button>
+      <button class="tag" onclick="T(this)">Crampes estomac</button>
+      <button class="tag" onclick="T(this)">Nausées</button>
+      <button class="tag" onclick="T(this)">Vomir</button>
+      <button class="tag" onclick="T(this)">Dégoût alimentaire</button>
+      <button class="tag" onclick="T(this)">Appétit +</button>
+      <button class="tag" onclick="T(this)">Appétit -</button>
+    </div>
+  </div>
+
+  <!-- ZONE INTIME -->
+  <div class="sec c-intime">
+    <div class="stitle">🏥 Zone Intime & Urinaire</div>
+    <div class="tgrid" id="g-intime">
+      <button class="tag" onclick="T(this)">Pertes normales</button>
+      <button class="tag" onclick="T(this)">Pertes inhabituelles</button>
+      <button class="tag" onclick="T(this)">Odeur forte</button>
+      <button class="tag" onclick="T(this)">Démangeaisons vaginales</button>
+      <button class="tag" onclick="T(this)">Irritation vulve</button>
+      <button class="tag" onclick="T(this)">Infection possible</button>
+      <button class="tag" onclick="T(this)">Urine claire</button>
+      <button class="tag" onclick="T(this)">Urine foncée</button>
+      <button class="tag" onclick="T(this)">Pipi fréquent</button>
+      <button class="tag" onclick="T(this)">Brûlure urine</button>
+    </div>
+  </div>
+
+  <!-- ALIMENTATION -->
+  <div class="sec c-food">
+    <div class="stitle">🍽️ Alimentation & Fringales</div>
+    <div class="tgrid" id="g-food">
+      <button class="tag" onclick="T(this)">Alimentation équilibrée</button>
+      <button class="tag" onclick="T(this)">Manger sain</button>
+      <button class="tag" onclick="T(this)">Cuisiné maison</button>
+      <button class="tag" onclick="T(this)">Restaurant</button>
+      <button class="tag" onclick="T(this)">Livraison</button>
+      <button class="tag" onclick="T(this)">Fast food</button>
+      <button class="tag" onclick="T(this)">Fringale sucre</button>
+      <button class="tag" onclick="T(this)">Fringale sel</button>
+      <button class="tag" onclick="T(this)">Fringale gras</button>
+      <button class="tag" onclick="T(this)">Chocolat</button>
+      <button class="tag" onclick="T(this)">Grignotage</button>
+      <button class="tag" onclick="T(this)">Pas de friandises ✓</button>
+      <button class="tag" onclick="T(this)">Pas de boisson sucrée ✓</button>
+      <button class="tag" onclick="T(this)">Apéro</button>
+      <button class="tag" onclick="T(this)">Alcool</button>
+      <button class="tag" onclick="T(this)">Excès alimentaire</button>
+      <button class="tag" onclick="T(this)">Jeûne/Diète</button>
+      <button class="tag" onclick="T(this)">Sucre évité ✓</button>
+    </div>
+    <div class="frow">
+      <input class="field" type="number" id="f-eau" placeholder="Eau (verres)" min="0" max="20">
+    </div>
+    <div class="slgrp">
+      <div class="sllbl"><span>Hygiène alimentaire</span><span class="slval" id="v-food">5</span>/10</div>
+      <input type="range" min="1" max="10" value="5" id="s-food" oninput="document.getElementById('v-food').innerText=this.value">
+    </div>
+    <div class="slgrp">
+      <div class="sllbl"><span>Caféine (tasses)</span><span class="slval" id="v-caffeine">0</span></div>
+      <input type="range" min="0" max="6" value="0" id="s-caffeine" oninput="document.getElementById('v-caffeine').innerText=this.value">
+    </div>
+  </div>
+
+  <!-- SOCIAL -->
+  <div class="sec c-social">
+    <div class="stitle">🌍 Vie Sociale</div>
+    <div class="tgrid" id="g-social">
+      <button class="tag" onclick="T(this)">Famille</button>
+      <button class="tag" onclick="T(this)">Amis</button>
+      <button class="tag" onclick="T(this)">Fête</button>
+      <button class="tag" onclick="T(this)">Prendre des nouvelles</button>
+      <button class="tag" onclick="T(this)">Collègues</button>
+      <button class="tag" onclick="T(this)">Dispute/Conflit</button>
+      <button class="tag" onclick="T(this)">Réconciliation</button>
+      <button class="tag" onclick="T(this)">Seule (choisi)</button>
+      <button class="tag" onclick="T(this)">Seule (subi)</button>
+      <button class="tag" onclick="T(this)">Discussion profonde</button>
+      <button class="tag" onclick="T(this)">Rdv médical</button>
+    </div>
+  </div>
+
+  <!-- ROMANTIQUE -->
+  <div class="sec c-romantique">
+    <div class="stitle">💝 Vie Romantique</div>
+    <div class="tgrid" id="g-romantique">
+      <button class="tag" onclick="T(this)">Câlins/Love</button>
+      <button class="tag" onclick="T(this)">Rdv amoureux</button>
+      <button class="tag" onclick="T(this)">Passer du temps ensemble</button>
+      <button class="tag" onclick="T(this)">Faire un cadeau</button>
+      <button class="tag" onclick="T(this)">Apprécier le partenaire</button>
+      <button class="tag" onclick="T(this)">Pas vu ce jour</button>
+      <button class="tag" onclick="T(this)">Moment de douceur</button>
+      <button class="tag" onclick="T(this)">Distance/Froid</button>
+      <button class="tag" onclick="T(this)">Dispute couple</button>
+      <button class="tag" onclick="T(this)">Réconciliation couple</button>
+    </div>
+  </div>
+
+  <!-- BIEN-ÊTRE -->
+  <div class="sec c-bienetre">
+    <div class="stitle">🌸 Bien-être & Connexion</div>
+    <div class="tgrid" id="g-bienetre">
+      <button class="tag" onclick="T(this)">Méditation faite</button>
+      <button class="tag" onclick="T(this)">Gentillesse donnée</button>
+      <button class="tag" onclick="T(this)">Écoute active</button>
+      <button class="tag" onclick="T(this)">Don/Générosité</button>
+      <button class="tag" onclick="T(this)">Parler à une amie</button>
+      <button class="tag" onclick="T(this)">Moment pour moi</button>
+      <button class="tag" onclick="T(this)">Gratitude exprimée</button>
+      <button class="tag" onclick="T(this)">Journaling</button>
+      <button class="tag" onclick="T(this)">Respiration consciente</button>
+      <button class="tag" onclick="T(this)">Moment en nature</button>
+    </div>
+  </div>
+
+  <!-- LOISIRS -->
+  <div class="sec c-loisirs">
+    <div class="stitle">🎨 Loisirs & Détente</div>
+    <div class="tgrid" id="g-loisirs">
+      <button class="tag" onclick="T(this)">Films/Séries</button>
+      <button class="tag" onclick="T(this)">Lecture</button>
+      <button class="tag" onclick="T(this)">Jeux vidéo</button>
+      <button class="tag" onclick="T(this)">Warhammer 🎲</button>
+      <button class="tag" onclick="T(this)">Musique</button>
+      <button class="tag" onclick="T(this)">Créativité/Art</button>
+      <button class="tag" onclick="T(this)">Cuisine/Pâtisserie</button>
+      <button class="tag" onclick="T(this)">Bain relaxant</button>
+      <button class="tag" onclick="T(this)">Détente</button>
+      <button class="tag" onclick="T(this)">Shopping</button>
+      <button class="tag" onclick="T(this)">Jardinage</button>
+      <button class="tag" onclick="T(this)">Podcast/Audio</button>
+      <button class="tag" onclick="T(this)">Écrans trop</button>
+    </div>
+  </div>
+
+  <!-- MÉTÉO -->
+  <div class="sec c-meteo">
+    <div class="stitle">🌤️ Météo</div>
+    <div class="tgrid" id="g-meteo">
+      <button class="tag" onclick="T(this)">Soleil ☀️</button>
+      <button class="tag" onclick="T(this)">Nuageux ☁️</button>
+      <button class="tag" onclick="T(this)">Pluie 🌧️</button>
+      <button class="tag" onclick="T(this)">Neige ❄️</button>
+      <button class="tag" onclick="T(this)">Chaleur 🥵</button>
+      <button class="tag" onclick="T(this)">Froid 🥶</button>
+      <button class="tag" onclick="T(this)">Vent</button>
+      <button class="tag" onclick="T(this)">Orage</button>
+      <button class="tag" onclick="T(this)">Pas sorti</button>
+    </div>
+  </div>
+
+  <!-- LIEU -->
+  <div class="sec c-lieu">
+    <div class="stitle">📍 Lieu du jour</div>
+    <div class="tgrid" id="g-lieu">
+      <button class="tag" onclick="T(this)">Maison</button>
+      <button class="tag" onclick="T(this)">Travail</button>
+      <button class="tag" onclick="T(this)">Appart</button>
+      <button class="tag" onclick="T(this)">Visite</button>
+      <button class="tag" onclick="T(this)">Voyage</button>
+      <button class="tag" onclick="T(this)">Vacances</button>
+      <button class="tag" onclick="T(this)">Salle de sport</button>
+      <button class="tag" onclick="T(this)">Cinéma</button>
+      <button class="tag" onclick="T(this)">Musée</button>
+      <button class="tag" onclick="T(this)">Shopping</button>
+      <button class="tag" onclick="T(this)">Restaurant</button>
+      <button class="tag" onclick="T(this)">Maison de repos</button>
+      <button class="tag" onclick="T(this)">Cours du soir</button>
+    </div>
+  </div>
+
+  <!-- TRAVAIL -->
+  <div class="sec c-travail">
+    <div class="stitle">💻 Travail & Productivité</div>
+    <div class="tgrid" id="g-travail">
+      <button class="tag" onclick="T(this)">Très productive</button>
+      <button class="tag" onclick="T(this)">Productive</button>
+      <button class="tag" onclick="T(this)">Concentration</button>
+      <button class="tag" onclick="T(this)">Faire une liste ✓</button>
+      <button class="tag" onclick="T(this)">Commencer tôt ✓</button>
+      <button class="tag" onclick="T(this)">Faire une pause</button>
+      <button class="tag" onclick="T(this)">Apprentissage</button>
+      <button class="tag" onclick="T(this)">Procrastination</button>
+      <button class="tag" onclick="T(this)">Réunions</button>
+      <button class="tag" onclick="T(this)">Télétravail</button>
+      <button class="tag" onclick="T(this)">Heures supplémentaires</button>
+      <button class="tag" onclick="T(this)">Voyage d'affaires</button>
+      <button class="tag" onclick="T(this)">Congé maladie</button>
+      <button class="tag" onclick="T(this)">Vacances/Férié</button>
+      <button class="tag" onclick="T(this)">Surchargée</button>
+      <button class="tag" onclick="T(this)">Jour off</button>
+    </div>
+  </div>
+
+  <!-- SPORT -->
+  <div class="sec c-sport">
+    <div class="stitle">🏃 Sport & Mouvement</div>
+    <div class="tgrid" id="g-sport">
+      <button class="tag" onclick="T(this)">Marche active</button>
+      <button class="tag" onclick="T(this)">Escaliers ✓</button>
+      <button class="tag" onclick="T(this)">Yoga</button>
+      <button class="tag" onclick="T(this)">Pilates</button>
+      <button class="tag" onclick="T(this)">Course à pied</button>
+      <button class="tag" onclick="T(this)">Musculation</button>
+      <button class="tag" onclick="T(this)">Natation</button>
+      <button class="tag" onclick="T(this)">Vélo/Vélotaf</button>
+      <button class="tag" onclick="T(this)">Danse</button>
+      <button class="tag" onclick="T(this)">Étirements</button>
+      <button class="tag" onclick="T(this)">Sport intensif</button>
+      <button class="tag" onclick="T(this)">Pas de sport</button>
+      <button class="tag" onclick="T(this)">Record perso 🏆</button>
+    </div>
+  </div>
+
+  <!-- SANTÉ & MÉDICAMENTS -->
+  <div class="sec c-sante">
+    <div class="stitle">💊 Santé & Médicaments</div>
+    <div class="tgrid" id="g-sante">
+      <button class="tag" onclick="T(this)">Je me sens bien</button>
+      <button class="tag" onclick="T(this)">Vitamines ✓</button>
+      <button class="tag" onclick="T(this)">Contraceptif ✓</button>
+      <button class="tag" onclick="T(this)">Huile/Complément ✓</button>
+      <button class="tag" onclick="T(this)">Traitement suivi ✓</button>
+      <button class="tag" onclick="T(this)">Oublié traitement</button>
+      <button class="tag" onclick="T(this)">Antidouleur pris</button>
+      <button class="tag" onclick="T(this)">Antibiotique</button>
+      <button class="tag" onclick="T(this)">Rhume</button>
+      <button class="tag" onclick="T(this)">Grippe</button>
+      <button class="tag" onclick="T(this)">Mal de gorge</button>
+      <button class="tag" onclick="T(this)">Fièvre</button>
+      <button class="tag" onclick="T(this)">Allergie</button>
+      <button class="tag" onclick="T(this)">Rdv médecin</button>
+    </div>
+    <div class="frow">
+      <input class="field" type="text" id="f-medic" placeholder="Médicament / traitement spécifique…">
+    </div>
+  </div>
+
+  <!-- MAUVAISES HABITUDES -->
+  <div class="sec c-mauvaises">
+    <div class="stitle">⚠️ Mauvaises habitudes</div>
+    <div class="tgrid" id="g-mauvaises">
+      <button class="tag" onclick="T(this)">Alcool</button>
+      <button class="tag" onclick="T(this)">Grignotage</button>
+      <button class="tag" onclick="T(this)">Procrastination</button>
+      <button class="tag" onclick="T(this)">Shopping compulsif</button>
+      <button class="tag" onclick="T(this)">Trop de réseaux</button>
+      <button class="tag" onclick="T(this)">Trop de caféine</button>
+      <button class="tag" onclick="T(this)">Coucher trop tard</button>
+      <button class="tag" onclick="T(this)">Sauter un repas</button>
+      <button class="tag" onclick="T(this)">Isolement</button>
+    </div>
+  </div>
+
+  <!-- CORVÉES -->
+  <div class="sec c-corvees">
+    <div class="stitle">🧹 Corvées du quotidien</div>
+    <div class="tgrid" id="g-corvees">
+      <button class="tag" onclick="T(this)">Courses</button>
+      <button class="tag" onclick="T(this)">Ménage</button>
+      <button class="tag" onclick="T(this)">Cuisiner</button>
+      <button class="tag" onclick="T(this)">Lessive</button>
+      <button class="tag" onclick="T(this)">Vaisselle</button>
+      <button class="tag" onclick="T(this)">Rangement</button>
+      <button class="tag" onclick="T(this)">Administratif</button>
+      <button class="tag" onclick="T(this)">Repassage</button>
+    </div>
+  </div>
+
+  <!-- NOTES -->
+  <div class="sec c-notes">
+    <div class="stitle">📝 Notes libres</div>
+    <textarea class="field" id="f-notes" placeholder="Un événement, une pensée, un détail important…"></textarea>
+  </div>
+
+</div></div>
+<!-- fin page aujourd'hui -->
+
+<!-- ═══ PAGE CYCLE ═══ -->
+<div id="p-cycle" class="page"><div class="pc">
+  <div class="cycle-stats" id="cycle-stats"></div>
+  <div class="sec c-cycle">
+    <div class="stitle">📅 Calendrier du Cycle</div>
+    <div class="cal-head">
+      <button class="cnav" onclick="prevM()">‹</button>
+      <div class="cal-m" id="cal-title">…</div>
+      <button class="cnav" onclick="nextM()">›</button>
+    </div>
+    <div class="cgrid" id="cal-grid"></div>
+    <div class="legend">
+      <div class="li"><div class="ld" style="background:#fb7185"></div>Règles réelles</div>
+      <div class="li"><div class="ld" style="background:rgba(251,113,133,.3)"></div>Règles prédites</div>
+      <div class="li"><div class="ld" style="background:#fbbf24"></div>Ovulation prédite</div>
+      <div class="li"><div class="ld" style="background:rgba(251,191,36,.25)"></div>Fenêtre fertile</div>
+    </div>
+  </div>
+  <div class="sec c-cycle">
+    <div class="stitle">⚙️ Paramètres cycle</div>
+    <div class="frow">
+      <input class="field" type="number" id="cyc-len" placeholder="Durée cycle (j)" value="28" min="20" max="45">
+      <input class="field" type="number" id="per-len" placeholder="Durée règles (j)" value="5" min="1" max="10">
+    </div>
+    <div class="frow">
+      <input class="field" type="date" id="last-per">
+    </div>
+    <button class="btn-save" onclick="saveCycle()" style="margin-top:10px">💾 Enregistrer paramètres</button>
+  </div>
+</div></div>
+
+<!-- ═══ PAGE ROUTINES ═══ -->
+<div id="p-routines" class="page"><div class="pc">
+  <div class="affcard">
+    <div class="afftext" id="r-aff">…</div>
+    <div class="affdate">✦ Affirmation du jour</div>
+  </div>
+  <div class="rprog">
+    <div class="rph"><span style="font-size:.8rem;font-weight:600">Progression aujourd'hui</span><span class="rpnum" id="r-pct">0%</span></div>
+    <div class="rpbar"><div class="rpfill" id="r-fill" style="width:0%"></div></div>
+  </div>
+  <div class="sec c-energie"><div class="stitle">🌅 Routines Matin</div><div id="r-matin"></div></div>
+  <div class="sec c-sommeil"><div class="stitle">🌙 Routines Soir</div><div id="r-soir"></div></div>
+  <div class="sec c-sport"><div class="stitle">💪 Habitudes Santé</div><div id="r-sante"></div></div>
+  <button class="add-r" onclick="openModal()">+ Ajouter une routine personnalisée</button>
+</div></div>
+
+<!-- ═══ PAGE HISTORIQUE ═══ -->
+<div id="p-hist" class="page"><div class="pc">
+  <div class="hfilt">
+    <input type="month" id="f-month">
+    <button class="bsm gr" onclick="exportCSV()">📥 CSV</button>
+    <button class="bsm rd" onclick="clearAll()">🗑️</button>
+  </div>
+  <div id="hist-list"></div>
+</div></div>
+
+<!-- ═══ PAGE STATS ═══ -->
+<div id="p-stats" class="page"><div class="pc">
+  <div class="sgrid" id="s-grid"></div>
+  <div id="s-tags"></div>
+</div></div>
+
+</div><!-- /content -->
+
+<!-- SAVE BAR -->
+<div class="sbar" id="sbar">
+  <button class="btn-save" onclick="saveEntry()">✨ Enregistrer ma journée</button>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bnav">
+  <div class="ni active" onclick="nav('today',this)"><div class="ic">✍️</div><span>Saisie</span></div>
+  <div class="ni" onclick="nav('cycle',this)"><div class="ic">🩸</div><span>Cycle</span></div>
+  <div class="ni" onclick="nav('routines',this)"><div class="ic">✅</div><span>Routines</span></div>
+  <div class="ni" onclick="nav('hist',this)"><div class="ic">📚</div><span>Historique</span></div>
+  <div class="ni" onclick="nav('stats',this)"><div class="ic">📊</div><span>Stats</span></div>
+</div>
+
+</div><!-- /app -->
+
+<!-- MODAL ROUTINE -->
+<div class="moverlay" id="modal">
+  <div class="modal">
+    <h3>Nouvelle routine</h3>
+    <input class="field" type="text" id="m-name" placeholder="Nom de la routine" style="margin-bottom:8px">
+    <div class="frow" style="margin-top:0;margin-bottom:8px">
+      <input class="field" type="text" id="m-emoji" placeholder="Émoji" style="max-width:80px">
+      <select class="field" id="m-cat">
+        <option value="matin">Matin</option>
+        <option value="soir">Soir</option>
+        <option value="sante">Santé</option>
+      </select>
+    </div>
+    <div class="mbtns">
+      <button class="bcancel" onclick="closeModal()">Annuler</button>
+      <button class="bprimary" onclick="addRoutine()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+// CONFIG — colle ton URL Google Sheets ici
+// ══════════════════════════════════════════
+const SHEETS_URL = https://script.google.com/macros/s/AKfycbwNacpMQlx6RQQ5oiMN4xZHxWCI-kGvgJrql6mcwNVEaBKBGV8v3cjDrnZaucBuxQka0A/exec;
+
+// ══════════════════════════════════════════
+// AFFIRMATIONS
+// ══════════════════════════════════════════
+const AFFS = [
+  "Mon corps est intelligent — je l'écoute avec gratitude.",
+  "Chaque cycle me rapproche de moi-même.",
+  "Je m'accorde la douceur que j'offre aux autres.",
+  "Ma santé est ma priorité la plus précieuse.",
+  "Je suis capable de traverser tous mes cycles avec grâce.",
+  "Je mérite du repos, de la joie et de l'amour.",
+  "Mon intuition est ma boussole la plus fiable.",
+  "Je choisis de prendre soin de moi aujourd'hui.",
+  "Chaque petit geste de bienveillance envers moi compte.",
+  "Je suis forte, sensible et résiliente.",
+  "Mon corps fait un travail extraordinaire chaque jour.",
+  "Je m'autorise à ressentir sans me juger.",
+  "La douceur est une forme de courage.",
+  "Je suis en harmonie avec mes cycles naturels.",
+  "Aujourd'hui, je m'écoute sans jugement et sans peur."
+];
+const todayAff = AFFS[(new Date().getDate() + new Date().getDay()) % AFFS.length];
+
+// ══════════════════════════════════════════
+// INDEXEDDB
+// ══════════════════════════════════════════
+let db;
+const DBN = 'EchoV3', S_ENT = 'entries', S_SET = 'settings', S_ROU = 'routines';
+
+function openDB() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open(DBN, 1);
+    r.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains(S_ENT)) {
+        d.createObjectStore(S_ENT, {keyPath:'id',autoIncrement:true}).createIndex('date','date');
+      }
+      if (!d.objectStoreNames.contains(S_SET)) d.createObjectStore(S_SET, {keyPath:'key'});
+      if (!d.objectStoreNames.contains(S_ROU)) d.createObjectStore(S_ROU, {keyPath:'id',autoIncrement:true});
+    };
+    r.onsuccess = e => { db = e.target.result; res(db); };
+    r.onerror = () => rej(r.error);
+  });
+}
+
+const tx = (store, mode, fn) => new Promise((res, rej) => {
+  const t = db.transaction(store, mode);
+  const s = t.objectStore(store);
+  const r = fn(s);
+  if (r && r.onsuccess !== undefined) r.onsuccess = () => res(r.result);
+  else t.oncomplete = () => res();
+  t.onerror = () => rej(t.error);
+});
+
+const dbAll  = s => tx(s,'readonly', o => o.getAll());
+const dbGet  = (s,k) => tx(s,'readonly', o => o.get(k));
+const dbAdd  = (s,v) => tx(s,'readwrite', o => o.add(v));
+const dbPut  = (s,v) => tx(s,'readwrite', o => o.put(v));
+const dbDel  = (s,k) => tx(s,'readwrite', o => o.delete(k));
+
+// ══════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════
+function nav(page, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(n => n.classList.remove('active'));
+  document.getElementById('p-'+page).classList.add('active');
+  el.classList.add('active');
+  document.getElementById('sbar').className = page==='today' ? 'sbar' : 'sbar hidden';
+  document.getElementById('content').scrollTop = 0;
+  if (page==='cycle') renderCal();
+  if (page==='routines') renderRoutines();
+  if (page==='hist') loadHist();
+  if (page==='stats') loadStats();
+}
+
+// ══════════════════════════════════════════
+// TAGS
+// ══════════════════════════════════════════
+function T(btn) { btn.classList.toggle('active'); }
+function gT(id) {
+  return Array.from(document.querySelectorAll('#g-'+id+' .active')).map(b=>b.innerText.trim()).join(', ');
+}
+
+// ══════════════════════════════════════════
+// SAVE ENTRY
+// ══════════════════════════════════════════
+async function saveEntry() {
+  const now = new Date();
+  const entry = {
+    date: now.toISOString().split('T')[0],
+    dateDisplay: now.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}),
+    moment: now.getHours()<14?'Matin':'Soir',
+    timestamp: now.toISOString(),
+    cycle:     gT('cycle'),
+    humeur:    gT('humeur'),
+    energie:   gT('energie'),
+    douleurs:  gT('douleurs'),
+    sex:       gT('sex'),
+    sommeil:   gT('sommeil'),
+    corps:     gT('corps'),
+    transit:   gT('transit'),
+    intime:    gT('intime'),
+    food:      gT('food'),
+    social:    gT('social'),
+    romantique:gT('romantique'),
+    bienetre:  gT('bienetre'),
+    loisirs:   gT('loisirs'),
+    meteo:     gT('meteo'),
+    lieu:      gT('lieu'),
+    travail:   gT('travail'),
+    sport:     gT('sport'),
+    sante:     gT('sante'),
+    mauvaises: gT('mauvaises'),
+    corvees:   gT('corvees'),
+    eau:       document.getElementById('f-eau').value||'',
+    poids:     document.getElementById('f-poids').value||'',
+    sommeil_h: document.getElementById('f-sommeil').value||'',
+    medicament:document.getElementById('f-medic').value||'',
+    s_humeur:  document.getElementById('s-humeur').value,
+    s_energie: document.getElementById('s-energie').value,
+    s_stress:  document.getElementById('s-stress').value,
+    s_douleur: document.getElementById('s-douleur').value,
+    s_sommeil: document.getElementById('s-sommeil').value,
+    s_food:    document.getElementById('s-food').value,
+    s_caffeine:document.getElementById('s-caffeine').value,
+    notes:     document.getElementById('f-notes').value
+  };
+
+  // Calendrier cycle auto
+  if (entry.cycle.includes('Jour 1') || entry.cycle.includes('Flux')) {
+    let cd = {}; try{ const r=await dbGet(S_SET,'cycleData'); if(r) cd=r.value; }catch(e){}
+    cd[entry.date] = 'period';
+    await dbPut(S_SET, {key:'cycleData', value:cd});
+  }
+
+  await dbAdd(S_ENT, entry);
+  toast('Journée enregistrée 🌙');
+  resetForm();
+  if (SHEETS_URL !== "TON_URL_ICI") syncSheets(entry);
+}
+
+function resetForm() {
+  document.querySelectorAll('.tag.active').forEach(t=>t.classList.remove('active'));
+  ['f-eau','f-poids','f-sommeil','f-medic','f-notes'].forEach(id=>{
+    const e=document.getElementById(id); if(e) e.value='';
+  });
+  const resets={
+    's-humeur':'5','s-energie':'5','s-stress':'0',
+    's-douleur':'0','s-sommeil':'5','s-food':'5','s-caffeine':'0'
+  };
+  Object.entries(resets).forEach(([id,val])=>{
+    const e=document.getElementById(id); if(e) e.value=val;
+    const v=id.replace('s-','v-'); const ve=document.getElementById(v); if(ve) ve.innerText=val;
+  });
+}
+
+// ══════════════════════════════════════════
+// CYCLE CALENDAR
+// ══════════════════════════════════════════
+let calY = new Date().getFullYear(), calM = new Date().getMonth();
+let cycleData = {}, cycSet = {len:28, plen:5, last:null};
+
+async function loadCycleSettings() {
+  try {
+    const cd = await dbGet(S_SET,'cycleData'); if(cd) cycleData=cd.value;
+    const cs = await dbGet(S_SET,'cycleSettings'); if(cs) cycSet=cs.value;
+    const le=document.getElementById('last-per'), cle=document.getElementById('cyc-len'), ple=document.getElementById('per-len');
+    if(le&&cycSet.last) le.value=cycSet.last;
+    if(cle) cle.value=cycSet.len;
+    if(ple) ple.value=cycSet.plen;
+  } catch(e){}
+}
+
+async function saveCycle() {
+  cycSet.len  = parseInt(document.getElementById('cyc-len').value)||28;
+  cycSet.plen = parseInt(document.getElementById('per-len').value)||5;
+  cycSet.last = document.getElementById('last-per').value;
+  await dbPut(S_SET,{key:'cycleSettings',value:cycSet});
+  renderCal(); toast('Paramètres cycle sauvegardés 🩸');
+}
+
+function getPreds() {
+  const p={fertile:new Set(),ovulation:new Set(),nextPeriod:new Set()};
+  if (!cycSet.last) return p;
+  const base=new Date(cycSet.last), today=new Date(); today.setHours(0,0,0,0);
+  for(let c=0;c<4;c++){
+    const ps=new Date(base); ps.setDate(ps.getDate()+cycSet.len*c);
+    for(let d=0;d<cycSet.plen;d++){
+      const day=new Date(ps); day.setDate(day.getDate()+d);
+      const ds=day.toISOString().split('T')[0];
+      if(day>=today&&!cycleData[ds]) p.nextPeriod.add(ds);
+    }
+    const ov=new Date(ps); ov.setDate(ov.getDate()+cycSet.len-14);
+    const ovs=ov.toISOString().split('T')[0];
+    if(ov>=today&&!cycleData[ovs]) p.ovulation.add(ovs);
+    for(let f=-5;f<=1;f++){
+      const fd=new Date(ov); fd.setDate(fd.getDate()+f);
+      const fds=fd.toISOString().split('T')[0];
+      if(fd>=today&&!cycleData[fds]&&!p.ovulation.has(fds)) p.fertile.add(fds);
+    }
+  }
+  return p;
+}
+
+function renderCal() {
+  const MN=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  document.getElementById('cal-title').innerText=`${MN[calM]} ${calY}`;
+  const preds=getPreds(), today=new Date(); today.setHours(0,0,0,0);
+  const grid=document.getElementById('cal-grid');
+  const DNS=['Lu','Ma','Me','Je','Ve','Sa','Di'];
+  let h=DNS.map(d=>`<div class="cdn">${d}</div>`).join('');
+  let dow=new Date(calY,calM,1).getDay(); dow=dow===0?6:dow-1;
+  const dim=new Date(calY,calM+1,0).getDate();
+  for(let i=0;i<dow;i++) h+='<div class="cd empty"></div>';
+  for(let d=1;d<=dim;d++){
+    const ds=`${calY}-${String(calM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dobj=new Date(calY,calM,d);
+    const isT=dobj.getTime()===today.getTime();
+    const typ=cycleData[ds];
+    let cls='cd', ex='';
+    if(isT) cls+=' today';
+    if(typ==='period') { cls+=' period'; ex='🩸'; }
+    else if(typ==='ovulation'||preds.ovulation.has(ds)) { cls+=' ovulation'; ex='⭐'; }
+    else if(preds.fertile.has(ds)) cls+=' fertile';
+    else if(preds.nextPeriod.has(ds)) cls+=' pred-period';
+    h+=`<div class="${cls}" onclick="toggleDay('${ds}')">${d}${ex?`<span style="font-size:.45rem">${ex}</span>`:''}</div>`;
+  }
+  grid.innerHTML=h;
+  renderCycleStats();
+}
+
+async function toggleDay(ds) {
+  const cur=cycleData[ds];
+  const seq=['period','ovulation',null];
+  const next=seq[(seq.indexOf(cur)+1)%seq.length];
+  if(next===null) delete cycleData[ds]; else cycleData[ds]=next;
+  await dbPut(S_SET,{key:'cycleData',value:cycleData});
+  renderCal();
+}
+
+function prevM(){calM--;if(calM<0){calM=11;calY--;}renderCal();}
+function nextM(){calM++;if(calM>11){calM=0;calY++;}renderCal();}
+
+function renderCycleStats() {
+  const preds=getPreds(), today=new Date();
+  let daysP='—', daysO='—', cycDay='—';
+  const np=[...preds.nextPeriod].sort();
+  if(np.length) { const d=Math.round((new Date(np[0])-today)/86400000); daysP=d>=0?d+'j':'—'; }
+  const no=[...preds.ovulation].sort();
+  if(no.length) { const d=Math.round((new Date(no[0])-today)/86400000); daysO=d>=0?d+'j':'—'; }
+  if(cycSet.last) {
+    let cd=Math.round((today-new Date(cycSet.last))/86400000)+1;
+    if(cd>cycSet.len) cd=cd%cycSet.len||1;
+    cycDay=cd;
+  }
+  document.getElementById('cycle-stats').innerHTML=`
+    <div class="cs"><div class="cs-num">${cycDay}</div><div class="cs-lbl">Jour du cycle</div></div>
+    <div class="cs"><div class="cs-num">${daysP}</div><div class="cs-lbl">Prochaines règles</div></div>
+    <div class="cs"><div class="cs-num">${daysO}</div><div class="cs-lbl">Ovulation prédite</div></div>
+  `;
+}
+
+// ══════════════════════════════════════════
+// ROUTINES
+// ══════════════════════════════════════════
+const DEF_ROUTINES = [
+  {name:"Boire un verre d'eau",emoji:"💧",cat:"matin",desc:"Dès le réveil, avant le café",streak:0,done:false},
+  {name:"Prendre les escaliers",emoji:"🪜",cat:"matin",desc:"Éviter l'ascenseur",streak:0,done:false},
+  {name:"5 min d'étirements",emoji:"🧘",cat:"matin",desc:"Réveiller le corps doucement",streak:0,done:false},
+  {name:"Vitamines / contraceptif",emoji:"💊",cat:"matin",desc:"Ne pas oublier !",streak:0,done:false},
+  {name:"Lecture 10 min",emoji:"📖",cat:"soir",desc:"Avant d'éteindre les écrans",streak:0,done:false},
+  {name:"Soins peau du soir",emoji:"✨",cat:"soir",desc:"Démaquillage + hydratation",streak:0,done:false},
+  {name:"Gratitude / notes",emoji:"📝",cat:"soir",desc:"2 min de gratitude",streak:0,done:false},
+  {name:"Écrans off 30 min avant",emoji:"📵",cat:"soir",desc:"Pour un meilleur sommeil",streak:0,done:false},
+  {name:"8 verres d'eau",emoji:"🚰",cat:"sante",desc:"Objectif hydratation",streak:0,done:false},
+  {name:"30 min de mouvement",emoji:"🏃",cat:"sante",desc:"Marche, sport, escaliers…",streak:0,done:false},
+  {name:"Pas de caféine après 15h",emoji:"☕",cat:"sante",desc:"Pour mieux dormir",streak:0,done:false},
+];
+let routines=[];
+
+async function loadRoutines() {
+  const stored=await dbAll(S_ROU);
+  if(!stored.length){ for(const r of DEF_ROUTINES) await dbAdd(S_ROU,r); routines=await dbAll(S_ROU); }
+  else routines=stored;
+}
+
+async function renderRoutines() {
+  if(!routines.length) await loadRoutines();
+  ['matin','soir','sante'].forEach(cat=>{
+    const el=document.getElementById('r-'+cat);
+    const arr=routines.filter(r=>r.cat===cat);
+    el.innerHTML=arr.map(r=>`
+      <div class="ritem ${r.done?'done':''}" onclick="toggleR(${r.id})">
+        <div class="rcheck">${r.done?'✓':''}</div>
+        <div class="ricon">${r.emoji}</div>
+        <div class="rinfo">
+          <div class="rname">${r.name}</div>
+          <div class="rdesc">${r.desc}</div>
+        </div>
+        ${r.streak>0?`<div class="rstreak">🔥 ${r.streak}j</div>`:''}
+      </div>`).join('');
+  });
+  updateRProg();
+}
+
+async function toggleR(id) {
+  const r=routines.find(x=>x.id===id); if(!r) return;
+  r.done=!r.done;
+  if(r.done) r.streak=(r.streak||0)+1; else r.streak=Math.max(0,(r.streak||1)-1);
+  await dbPut(S_ROU,r); renderRoutines();
+}
+
+function updateRProg() {
+  const tot=routines.length, done=routines.filter(r=>r.done).length;
+  const pct=tot?Math.round(done/tot*100):0;
+  document.getElementById('r-pct').innerText=pct+'%';
+  document.getElementById('r-fill').style.width=pct+'%';
+}
+
+function openModal(){document.getElementById('modal').classList.add('open');}
+function closeModal(){document.getElementById('modal').classList.remove('open');}
+async function addRoutine(){
+  const name=document.getElementById('m-name').value.trim();
+  const emoji=document.getElementById('m-emoji').value.trim()||'⭐';
+  const cat=document.getElementById('m-cat').value;
+  if(!name){toast('Donne un nom à ta routine');return;}
+  await dbAdd(S_ROU,{name,emoji,cat,desc:'',streak:0,done:false});
+  routines=await dbAll(S_ROU); closeModal(); renderRoutines(); toast('Routine ajoutée ✅');
+}
+
+// ══════════════════════════════════════════
+// HISTORIQUE
+// ══════════════════════════════════════════
+const CM={
+  cycle:'#f472b6',humeur:'#fbbf24',energie:'#34d399',douleurs:'#a78bfa',
+  sex:'#ec4899',sommeil:'#60a5fa',corps:'#2dd4bf',transit:'#ca8a04',
+  intime:'#e879f9',food:'#fb923c',social:'#4ade80',romantique:'#f43f5e',
+  bienetre:'#a78bfa',loisirs:'#fdba74',meteo:'#38bdf8',lieu:'#7dd3fc',
+  travail:'#94a3b8',sport:'#86efac',sante:'#fca5a5',mauvaises:'#f87171',corvees:'#78716c'
+};
+
+async function loadHist() {
+  const entries=await dbAll(S_ENT);
+  const fv=document.getElementById('f-month').value;
+  const fil=entries.filter(e=>e.date&&e.date.startsWith(fv)).reverse();
+  const el=document.getElementById('hist-list');
+  if(!fil.length){el.innerHTML='<div class="empty"><div class="ei">📭</div><p>Aucune entrée ce mois-ci</p></div>';return;}
+  el.innerHTML=fil.map(e=>{
+    const chips=Object.entries(CM).flatMap(([k,c])=>
+      (e[k]||'').split(', ').filter(Boolean).map(t=>`<span class="chip c" style="background:${c}33;border-color:${c}55;color:${c}">${t}</span>`)
+    ).join('');
+    const meta=[];
+    if(e.eau) meta.push(`💧 ${e.eau}v`);
+    if(e.poids) meta.push(`⚖️ ${e.poids}kg`);
+    if(e.sommeil_h) meta.push(`😴 ${e.sommeil_h}h`);
+    if(e.s_humeur) meta.push(`😊 ${e.s_humeur}/10`);
+    if(e.s_energie) meta.push(`⚡ ${e.s_energie}/10`);
+    if(e.s_stress) meta.push(`😰 stress ${e.s_stress}/10`);
+    if(e.s_caffeine>0) meta.push(`☕ ${e.s_caffeine}`);
+    return `<div class="ecard">
+      <div class="ehead">
+        <div><div class="edate">${e.dateDisplay||e.date}</div><span class="emom">${e.moment||''}</span></div>
+        <button class="edel" onclick="delEntry(${e.id})">✕</button>
+      </div>
+      <div class="chips">${chips||'<span style="color:var(--muted);font-size:.7rem">Aucun tag</span>'}</div>
+      ${meta.length?`<div class="emeta">${meta.join(' · ')}</div>`:''}
+      ${e.medicament?`<div class="emeta">💊 ${e.medicament}</div>`:''}
+      ${e.notes?`<div class="enote">"${e.notes}"</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+async function delEntry(id){if(!confirm('Supprimer cette entrée ?'))return;await dbDel(S_ENT,id);loadHist();toast('Entrée supprimée');}
+async function clearAll(){if(!confirm('Supprimer TOUTES les données ? Irréversible.'))return;const a=await dbAll(S_ENT);for(const e of a)await dbDel(S_ENT,e.id);loadHist();toast('Données effacées');}
+
+// ══════════════════════════════════════════
+// STATS
+// ══════════════════════════════════════════
+async function loadStats() {
+  const entries=await dbAll(S_ENT);
+  const sg=document.getElementById('s-grid'), st=document.getElementById('s-tags');
+  if(!entries.length){sg.innerHTML='';st.innerHTML='<div class="empty"><div class="ei">📊</div><p>Pas encore de données</p></div>';return;}
+  const now=new Date();
+  const tm=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const me=entries.filter(e=>e.date&&e.date.startsWith(tm));
+  const avg=(arr,k)=>{const v=arr.filter(e=>e[k]).map(e=>parseFloat(e[k]));return v.length?(v.reduce((s,x)=>s+x,0)/v.length).toFixed(1):'—';};
+  sg.innerHTML=`
+    <div class="sc"><div class="sn">${entries.length}</div><div class="sl2">Entrées totales</div></div>
+    <div class="sc"><div class="sn">${me.length}</div><div class="sl2">Ce mois-ci</div></div>
+    <div class="sc"><div class="sn">${avg(me,'eau')}</div><div class="sl2">💧 Verres/j</div></div>
+    <div class="sc"><div class="sn">${avg(me,'s_humeur')}</div><div class="sl2">😊 Humeur moy.</div></div>
+    <div class="sc"><div class="sn">${avg(me,'s_energie')}</div><div class="sl2">⚡ Énergie moy.</div></div>
+    <div class="sc"><div class="sn">${avg(me,'s_stress')}</div><div class="sl2">😰 Stress moy.</div></div>
+    <div class="sc"><div class="sn">${avg(me,'sommeil_h')}</div><div class="sl2">😴 Heures sommeil</div></div>
+    <div class="sc"><div class="sn">${avg(me,'s_caffeine')}</div><div class="sl2">☕ Caféine/j</div></div>
+  `;
+  const tc={};
+  Object.keys(CM).forEach(f=>entries.forEach(e=>(e[f]||'').split(', ').filter(Boolean).forEach(t=>tc[t]=(tc[t]||0)+1)));
+  const sorted=Object.entries(tc).sort((a,b)=>b[1]-a[1]).slice(0,15);
+  const mx=sorted[0]?.[1]||1;
+  st.innerHTML=`<div class="sec c-notes"><div class="stitle">🏆 Tags les plus fréquents</div>${
+    sorted.map(([t,c])=>`<div class="tbar"><div class="tbh"><span>${t}</span><span class="tbc">${c}×</span></div><div class="bbar"><div class="bfill" style="width:${c/mx*100}%"></div></div></div>`).join('')
+  }</div>`;
+}
+
+// ══════════════════════════════════════════
+// GOOGLE SHEETS SYNC
+// ══════════════════════════════════════════
+async function syncSheets(data) {
+  if(SHEETS_URL==="TON_URL_ICI"){toast('⚠️ Configure l\'URL Google Sheets dans le code');return;}
+  document.getElementById('sdot').className='dot';
+  try {
+    const toSync=data?[data]:await dbAll(S_ENT);
+    for(const e of toSync){
+      await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(e)});
+    }
+    document.getElementById('sdot').className='dot on';
+    toast('Synchronisé avec Google Sheets ✅');
+  } catch(e){ toast('Erreur sync ❌'); }
+}
+
+// ══════════════════════════════════════════
+// EXPORT CSV
+// ══════════════════════════════════════════
+async function exportCSV() {
+  const entries=await dbAll(S_ENT); if(!entries.length){toast('Aucune donnée');return;}
+  const H=['date','moment','cycle','humeur','energie','douleurs','sex','sommeil','corps','transit','intime',
+    'food','social','romantique','bienetre','loisirs','meteo','lieu','travail','sport','sante','mauvaises','corvees',
+    'eau','poids','sommeil_h','medicament','s_humeur','s_energie','s_stress','s_douleur','s_sommeil','s_food','s_caffeine','notes'];
+  const csv=[H.join(';'),...entries.map(e=>H.map(h=>`"${(e[h]||'').toString().replace(/"/g,'""')}"`).join(';'))].join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'}));
+  a.download=`echo-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click(); toast('Export CSV téléchargé 📥');
+}
+
+// ══════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════
+function toast(msg) {
+  const t=document.getElementById('toast');
+  t.innerText=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+async function init() {
+  await openDB();
+  document.getElementById('aff-text').innerText=todayAff;
+  document.getElementById('tb-aff').innerText=todayAff;
+  document.getElementById('r-aff').innerText=todayAff;
+  document.getElementById('aff-date').innerText=new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const now=new Date();
+  document.getElementById('f-month').value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  await loadCycleSettings();
+  await loadRoutines();
+  setTimeout(()=>{
+    const s=document.getElementById('splash'); s.classList.add('hide');
+    setTimeout(()=>s.remove(),600);
+  },1200);
+}
+
+init();
+</script>
+</body>
+</html>
